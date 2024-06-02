@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -57,10 +59,16 @@ public class CustomerController {
 
     @Operation(summary = "Get all customers")
     @GetMapping
-    public List<Customer> getAllCustomers() {
-        customerService.assignAccountsToCustomers();
-        return customerService.findAll();
+    public ResponseEntity<List<Customer>> getAllCustomers(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+
+        Page<Customer> customersPage = customerService.findAll(0, Integer.MAX_VALUE, PageRequest.of(page, size));
+        List<Customer> customers = customersPage.getContent();
+
+        return ResponseEntity.ok().body(customers);
     }
+
 
     @Operation(summary = "Create a new customer")
     @PostMapping
@@ -73,7 +81,7 @@ public class CustomerController {
     @PutMapping("/id/{id}")
     public ResponseEntity<?> updateCustomer(@PathVariable Long id, @RequestBody CustomerDto customerDto) {
         try {
-            Customer currentCustomer = customerService.getOne(id);
+            Customer currentCustomer = customerService.getOne(id).orElseThrow();
             if (customerDto.getName() != null) {
                 currentCustomer.setName(customerDto.getName());
             }
@@ -104,7 +112,7 @@ public class CustomerController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCustomer(@PathVariable Long id) {
         try {
-            Customer customer = customerService.getOne(id);
+            Customer customer = customerService.getOne(id).orElseThrow();
             customerService.deleteCustomerAccounts(customer);
             customerService.deleteById(customer.getId());
             return ResponseEntity.ok().build();
@@ -115,10 +123,11 @@ public class CustomerController {
     }
 
 
+
     @PostMapping("/{customerId}/accounts")
     public ResponseEntity<?> createAccountForCustomer(@PathVariable Long customerId, @RequestBody AccountDto accountDto) {
         try {
-            Customer customer = customerService.getOne(customerId);
+            Customer customer = customerService.getOne(customerId).orElseThrow();
             customerService.createAccountForCustomer(customer.getId(), accountDto.getCurrency(), accountDto.getBalance());
             customerService.update(customerId, customer);
             return ResponseEntity.ok(customer);
@@ -132,7 +141,7 @@ public class CustomerController {
     @DeleteMapping("/{customerId}/accounts/{accountNumber}")
     public ResponseEntity<?> deleteAccountFromCustomer(@PathVariable Long customerId, @PathVariable String accountNumber) {
         try {
-            Customer customer = customerService.getOne(customerId);
+            Customer customer = customerService.getOne(customerId).orElseThrow();
             Account accountToDelete = null;
             for (Account account : customer.getAccounts()) {
                 if (account.getNumber().equals(accountNumber)) {

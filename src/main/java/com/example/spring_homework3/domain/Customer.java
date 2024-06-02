@@ -26,6 +26,7 @@ public class Customer extends AbstractEntity {
     private String email;
     private Integer age;
     private String password;
+    @Column(name = "phone_number")
     private String phoneNumber;
     @JsonManagedReference
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)

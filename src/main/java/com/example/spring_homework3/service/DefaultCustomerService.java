@@ -1,65 +1,67 @@
 package com.example.spring_homework3.service;
 
 import com.example.spring_homework3.dao.AccountJpaRepository;
-import com.example.spring_homework3.dao.CustomerDao;
+import com.example.spring_homework3.dao.CustomerJpaRepository;
 import com.example.spring_homework3.domain.Account;
 import com.example.spring_homework3.domain.Currency;
 import com.example.spring_homework3.domain.Customer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
 @Transactional
 @RequiredArgsConstructor
 public class DefaultCustomerService implements CustomerService {
-    private final CustomerDao customerDao;
+    private final CustomerJpaRepository customerJpaRepository;
     private final AccountJpaRepository accountJpaRepository;
 
     @Override
     public Customer save(Customer customer) {
-        return customerDao.save(customer);
+        return customerJpaRepository.save(customer);
     }
 
     @Override
-    public boolean delete(Customer customer) {
-        return customerDao.delete(customer);
+    public void delete(Customer customer) {
+        customerJpaRepository.delete(customer);
     }
 
     @Override
     public void deleteAll() {
-        customerDao.deleteAll();
+        customerJpaRepository.deleteAll();
     }
 
     @Override
     public void saveAll(Customer customer) {
-        customerDao.saveAll(customer);
+        customerJpaRepository.save(customer);
     }
 
     @Override
-    public List<Customer> findAll() {
-        return customerDao.findAll();
+    public Page<Customer> findAll(Integer from, Integer to, Pageable pageable) {
+        return customerJpaRepository.findAllInRange(from, to, pageable);
     }
 
     @Override
-    public boolean deleteById(Long id) {
-        return customerDao.deleteById(id);
+    public void deleteById(Long id) {
+        customerJpaRepository.deleteById(id);
     }
 
     @Override
-    public Customer getOne(long id) {
-        return customerDao.getOne(id);
+    public Optional<Customer> getOne(Long id) {
+        return customerJpaRepository.findById(id);
     }
 
 
     @Override
     public void createAccountForCustomer(Long id, Currency currency, Double amount) {
-        Customer customer = customerDao.getOne(id);
+        Customer customer = customerJpaRepository.getOne(id);
 
         if (customer == null) {
             throw new IllegalArgumentException("Customer not found with id: " + id);
@@ -86,10 +88,10 @@ public class DefaultCustomerService implements CustomerService {
         List<Account> accounts = customer.getAccounts();
         if (!accounts.isEmpty()){
             for (Account account : accounts) {
-                accountJpaRepository.deleteById(Math.toIntExact(account.getId()));
+                accountJpaRepository.deleteById(account.getId());
             }
             accounts.clear();
-            customerDao.update(customer);;
+//            accountJpaRepository.updateBalanceByNumber(customer, );
         } else {
             throw new IllegalArgumentException("Accounts are absent");
         }
@@ -98,7 +100,7 @@ public class DefaultCustomerService implements CustomerService {
 
     @Override
     public void deleteAccountFromCustomer(Long customerId, String accountNumber) {
-        Customer customer = customerDao.getOne(customerId);
+        Customer customer = customerJpaRepository.getOne(customerId);
         if (customer != null) {
             Account accountToDelete = customer.getAccounts().stream()
                     .filter(account -> account.getNumber().equals(accountNumber))
@@ -116,29 +118,30 @@ public class DefaultCustomerService implements CustomerService {
     }
 
     @Override
-    public Customer update(Long id, Customer customer) {
-        Customer currentCustomer = customerDao.getOne(id);
+    public Customer update(Long id, Customer updatedCustomer) {
+        Customer currentCustomer = customerJpaRepository.getOne(id);
         if (currentCustomer == null) {
             throw new IllegalArgumentException("Customer with id " + id + " not found");
         }
 
-        currentCustomer.setName(customer.getName());
-        currentCustomer.setEmail(customer.getEmail());
-        currentCustomer.setAge(customer.getAge());
+        currentCustomer.setName(updatedCustomer.getName());
+        currentCustomer.setEmail(updatedCustomer.getEmail());
+        currentCustomer.setAge(updatedCustomer.getAge());
 
         for (Account account : currentCustomer.getAccounts()) {
             account.setCustomer(currentCustomer);
             accountJpaRepository.save(account);
         }
 
-        return customerDao.update(currentCustomer);
+        customerJpaRepository.updateCustomerById(id, updatedCustomer.getName(), updatedCustomer.getEmail(), updatedCustomer.getAge());
+        return updatedCustomer;
     }
 
     @Override
     public void assignAccountsToCustomers() {
 
         List<Account> allAccounts = accountJpaRepository.findAll();
-        List<Customer> allCustomers = customerDao.findAll();
+        List<Customer> allCustomers = customerJpaRepository.findAll();
 
         for (Account account : allAccounts) {
             Customer customer = account.getCustomer();

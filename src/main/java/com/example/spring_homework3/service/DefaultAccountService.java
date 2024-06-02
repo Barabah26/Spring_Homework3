@@ -44,12 +44,12 @@ public class DefaultAccountService implements AccountService {
     }
 
     @Override
-    public void deleteById(Integer id) {
+    public void deleteById(Long id) {
         accountJpaRepository.deleteById(id);
     }
 
     @Override
-    public Optional<Account> getOne(Integer id) {
+    public Optional<Account> getOne(Long id) {
         return accountJpaRepository.findById(id);
     }
 

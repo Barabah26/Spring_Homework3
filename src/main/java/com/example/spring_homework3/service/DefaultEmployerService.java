@@ -1,6 +1,6 @@
 package com.example.spring_homework3.service;
 
-import com.example.spring_homework3.dao.EmployerDao;
+import com.example.spring_homework3.dao.EmployerJpaRepository;
 import com.example.spring_homework3.domain.Employer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,45 +8,46 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
 @Transactional
 @RequiredArgsConstructor
 public class DefaultEmployerService implements EmployerService {
-    private final EmployerDao employerDao;
+    private final EmployerJpaRepository employerJpaRepository;
     @Override
     public Employer save(Employer employer) {
-        return employerDao.save(employer);
+        return employerJpaRepository.save(employer);
     }
 
     @Override
-    public boolean delete(Employer employer) {
-        return employerDao.delete(employer);
+    public void delete(Employer employer) {
+        employerJpaRepository.delete(employer);
     }
 
     @Override
     public void deleteAll() {
-        employerDao.deleteAll();
+        employerJpaRepository.deleteAll();
     }
 
     @Override
     public void saveAll(Employer employer) {
-        employerDao.saveAll(employer);
+        employerJpaRepository.save(employer);
     }
 
     @Override
     public List<Employer> findAll() {
-        return employerDao.findAll();
+        return employerJpaRepository.findAll();
     }
 
     @Override
-    public boolean deleteById(long id) {
-        return employerDao.deleteById(id);
+    public void deleteById(Long id) {
+        employerJpaRepository.deleteById(id);
     }
 
     @Override
-    public Employer getOne(long id) {
-        return employerDao.getOne(id);
+    public Optional<Employer> getOne(Long id) {
+        return employerJpaRepository.findById(id);
     }
 }

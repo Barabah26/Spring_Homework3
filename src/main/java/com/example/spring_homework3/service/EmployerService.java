@@ -3,11 +3,12 @@ package com.example.spring_homework3.service;
 import com.example.spring_homework3.domain.Employer;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EmployerService {
     Employer save(Employer employer);
 
-    boolean delete(Employer employer);
+    void delete(Employer employer);
 
     void deleteAll();
 
@@ -15,7 +16,7 @@ public interface EmployerService {
 
     List<Employer> findAll();
 
-    boolean deleteById(long id);
+    void deleteById(Long id);
 
-    Employer getOne(long id);
+    Optional<Employer> getOne(Long id);
 }

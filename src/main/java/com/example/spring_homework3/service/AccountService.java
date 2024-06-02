@@ -11,8 +11,8 @@ public interface AccountService {
     void deleteAll();
     void saveAll(Account account);
     List<Account> findAll();
-    void deleteById(Integer id);
-    Optional<Account> getOne(Integer id);
+    void deleteById(Long id);
+    Optional<Account> getOne(Long id);
     Account findByNumber(String number);
     Account depositToAccount(String accountNumber, double amount);
     boolean withdrawFromAccount(String accountNumber, double amount);

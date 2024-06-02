@@ -44,13 +44,13 @@ public class AccountController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteAccountById(@PathVariable Integer id) {
+    public void deleteAccountById(@PathVariable Long id) {
         accountService.deleteById(id);
     }
 
     @Operation(summary = "Get account by id")
     @GetMapping("/{id}")
-    public ResponseEntity<?> getAccountById(@PathVariable Integer id) {
+    public ResponseEntity<?> getAccountById(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(accountService.getOne(id));
         } catch (RuntimeException e) {
