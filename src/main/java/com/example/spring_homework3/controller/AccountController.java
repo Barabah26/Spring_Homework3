@@ -2,45 +2,37 @@ package com.example.spring_homework3.controller;
 
 
 import com.example.spring_homework3.domain.Account;
+import com.example.spring_homework3.dto.account.AccountDtoResponse;
+import com.example.spring_homework3.mapper.account.AccountDtoMapperResponse;
 import com.example.spring_homework3.service.DefaultAccountService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.swagger.models.auth.In;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/accounts")
 @CrossOrigin(origins = "http://localhost:3000")
 @Slf4j
+@RequiredArgsConstructor
 public class AccountController {
     private final DefaultAccountService accountService;
-    private final ObjectMapper objectMapper;
-
-    @Autowired
-    public AccountController(DefaultAccountService accountService, ObjectMapper objectMapper) {
-        this.accountService = accountService;
-        this.objectMapper = objectMapper;
-    }
-
-    @ModelAttribute
-    public void configureObjectMapper() {
-        SimpleFilterProvider filters = new SimpleFilterProvider();
-        filters.addFilter("accountFilter", SimpleBeanPropertyFilter.serializeAll());
-        filters.addFilter("customerFilter", SimpleBeanPropertyFilter.serializeAllExcept("accounts"));
-        objectMapper.setFilterProvider(filters);
-    }
+    private final AccountDtoMapperResponse accountDtoMapperResponse;
 
     @Operation(summary = "Get all accounts")
     @GetMapping("/all")
-    public List<Account> getAllAccounts() {
-        return accountService.findAll();
+    public List<AccountDtoResponse> getAllAccounts() {
+        return accountService.findAll().stream().map(accountDtoMapperResponse::convertToDto).toList();
     }
 
     @DeleteMapping("/{id}")
@@ -52,7 +44,9 @@ public class AccountController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getAccountById(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(accountService.getOne(id));
+            Account account = accountService.getOne(id).get();
+            AccountDtoResponse accountDtoResponse = accountDtoMapperResponse.convertToDto(account);
+            return ResponseEntity.ok(accountDtoResponse);
         } catch (RuntimeException e) {
             log.error("Account with id " + id + " not found", e);
             return ResponseEntity.badRequest().body("Account with id " + id + " not found");
@@ -61,10 +55,11 @@ public class AccountController {
 
     @Operation(summary = "Deposit an amount to an account")
     @PostMapping("/deposit/{number}")
-    public ResponseEntity<?> depositToAccount(@PathVariable String number, @RequestBody Double amount) {
+    public ResponseEntity<?> depositToAccount(@PathVariable UUID number, @RequestBody Double amount) {
         try {
             Account updatedAccount = accountService.depositToAccount(number, amount);
-            return ResponseEntity.ok(updatedAccount);
+            AccountDtoResponse accountDtoResponse = accountDtoMapperResponse.convertToDto(updatedAccount);
+            return ResponseEntity.ok(accountDtoResponse);
         } catch (IllegalArgumentException e) {
             if (e.getMessage().contains("not found")) {
                 log.error("Account with number " + number + " not found", e);
@@ -78,7 +73,7 @@ public class AccountController {
 
     @Operation(summary = "Withdraw an amount from an account")
     @PutMapping("/withdraw/{accountNumber}")
-    public ResponseEntity<?> withdrawFromAccount(@PathVariable String accountNumber, @RequestBody Double amount) {
+    public ResponseEntity<?> withdrawFromAccount(@PathVariable UUID accountNumber, @RequestBody Double amount) {
         try {
             boolean withdrawalSuccessful = accountService.withdrawFromAccount(accountNumber, amount);
             if (withdrawalSuccessful) {
@@ -94,7 +89,7 @@ public class AccountController {
 
     @Operation(summary = "Transfer an amount from one account to another")
     @PutMapping("/transfer/{fromAccountNumber}/{toAccountNumber}")
-    public ResponseEntity<?> transferMoney(@PathVariable String fromAccountNumber, @PathVariable String toAccountNumber, @RequestBody double amount) {
+    public ResponseEntity<?> transferMoney(@PathVariable UUID fromAccountNumber, @PathVariable UUID toAccountNumber, @RequestBody double amount) {
         try {
             accountService.transferMoney(fromAccountNumber, toAccountNumber, amount);
             return ResponseEntity.ok("Transfer successful");

@@ -17,7 +17,7 @@ public class Account extends AbstractEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String number;
+    private UUID number = UUID.randomUUID();
     @Enumerated(EnumType.STRING)
     private Currency currency;
     private Double balance;
@@ -29,11 +29,10 @@ public class Account extends AbstractEntity {
     public Account(Currency currency, Customer customer) {
         this.currency = currency;
         this.customer = customer;
-        this.number = UUID.randomUUID().toString();
         this.balance = 0D;
     }
 
-    public Account(Long id, String number, Currency currency, Double balance, Customer customer) {
+    public Account(Long id, UUID number, Currency currency, Double balance, Customer customer) {
         this.id = id;
         this.number = number;
         this.currency = currency;

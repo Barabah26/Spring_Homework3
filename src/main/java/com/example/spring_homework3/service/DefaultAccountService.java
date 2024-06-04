@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -54,12 +55,12 @@ public class DefaultAccountService implements AccountService {
     }
 
     @Override
-    public Account findByNumber(String number){
+    public Account findByNumber(UUID number){
         return accountJpaRepository.findByNumber(number);
     }
 
     @Override
-    public Account depositToAccount(String accountNumber, double amount) {
+    public Account depositToAccount(UUID accountNumber, double amount) {
         log.info("Depositing {} to account {}", amount, accountNumber);
         if (amount <= 0) {
             log.error("Deposit amount must be greater than zero: {}", amount);
@@ -82,7 +83,7 @@ public class DefaultAccountService implements AccountService {
 
 
     @Override
-    public boolean withdrawFromAccount(String accountNumber, double amount) {
+    public boolean withdrawFromAccount(UUID accountNumber, double amount) {
         if (amount <= 0){
             throw new IllegalArgumentException("Incorrect amount" + amount);
         }
@@ -104,7 +105,7 @@ public class DefaultAccountService implements AccountService {
 
 
     @Override
-    public void transferMoney(String fromAccountNumber, String toAccountNumber, double amount) {
+    public void transferMoney(UUID fromAccountNumber, UUID toAccountNumber, double amount) {
         if (fromAccountNumber.equals(toAccountNumber)) {
             throw new IllegalArgumentException("From and To account numbers cannot be the same");
         }

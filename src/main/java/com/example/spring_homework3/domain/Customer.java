@@ -32,7 +32,7 @@ public class Customer extends AbstractEntity {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Account> accounts;
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinTable(name = "customer_employer",
+    @JoinTable(name = "employers_customers",
             joinColumns = @JoinColumn(name = "customer_id"),
             inverseJoinColumns = @JoinColumn(name = "employer_id"))
     private List<Employer> employers = new ArrayList<>();

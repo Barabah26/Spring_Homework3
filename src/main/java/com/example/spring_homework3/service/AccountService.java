@@ -4,6 +4,7 @@ import com.example.spring_homework3.domain.Account;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface AccountService {
     void save(Account account);
@@ -13,8 +14,8 @@ public interface AccountService {
     List<Account> findAll();
     void deleteById(Long id);
     Optional<Account> getOne(Long id);
-    Account findByNumber(String number);
-    Account depositToAccount(String accountNumber, double amount);
-    boolean withdrawFromAccount(String accountNumber, double amount);
-    void transferMoney(String fromAccountNumber, String toAccountNumber, double amount);
+    Account findByNumber(UUID number);
+    Account depositToAccount(UUID accountNumber, double amount);
+    boolean withdrawFromAccount(UUID accountNumber, double amount);
+    void transferMoney(UUID fromAccountNumber, UUID toAccountNumber, double amount);
 }

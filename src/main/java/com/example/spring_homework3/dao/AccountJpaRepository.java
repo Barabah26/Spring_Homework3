@@ -8,10 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 public interface AccountJpaRepository extends JpaRepository<Account, Long> {
-    Account findByNumber(String number);
+    Account findByNumber(UUID number);
     @Modifying
     @Transactional
     @Query("UPDATE Account a SET a.balance = :balance WHERE a.number = :number")
-    void updateBalanceByNumber(@Param("number") String number, @Param("balance") Double balance);
+    void updateBalanceByNumber(@Param("number") UUID number, @Param("balance") Double balance);
 }

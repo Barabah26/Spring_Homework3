@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface CustomerService {
     Customer save(Customer obj);
@@ -17,7 +18,7 @@ public interface CustomerService {
     void deleteById(Long id);
     Optional<Customer> getOne(Long id);
     void createAccountForCustomer(Long id, Currency currency, Double amount);
-    void deleteAccountFromCustomer(Long customerId, String accountNumber);
+    void deleteAccountFromCustomer(Long customerId, UUID accountNumber);
     Customer update(Long id, Customer updatedCustomer);
     void assignAccountsToCustomers();
     void deleteCustomerAccounts(Customer customer);

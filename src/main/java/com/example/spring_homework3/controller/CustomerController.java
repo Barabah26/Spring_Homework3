@@ -2,16 +2,19 @@ package com.example.spring_homework3.controller;
 
 import com.example.spring_homework3.domain.Account;
 import com.example.spring_homework3.domain.Customer;
-import com.example.spring_homework3.dto.AccountDto;
-import com.example.spring_homework3.dto.CustomerDto;
+import com.example.spring_homework3.dto.account.AccountDtoRequest;
+import com.example.spring_homework3.dto.customer.CustomerDtoRequest;
+import com.example.spring_homework3.dto.customer.CustomerDtoResponse;
+import com.example.spring_homework3.dto.customer.CustomerView;
+import com.example.spring_homework3.mapper.account.AccountDtoMapperRequest;
+import com.example.spring_homework3.mapper.customer.CustomerDtoMapperRequest;
+import com.example.spring_homework3.mapper.customer.CustomerDtoMapperResponse;
 import com.example.spring_homework3.service.DefaultAccountService;
 import com.example.spring_homework3.service.DefaultCustomerService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -19,38 +22,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/customers")
 @CrossOrigin(origins = "http://localhost:3000")
 @Slf4j
+@RequiredArgsConstructor
 public class CustomerController {
     private final DefaultCustomerService customerService;
     private final DefaultAccountService accountService;
-    private final ObjectMapper objectMapper;
-
-
-    @Autowired
-    public CustomerController(DefaultCustomerService customerService, DefaultAccountService accountService, ObjectMapper objectMapper) {
-        this.customerService = customerService;
-        this.accountService = accountService;
-        this.objectMapper = objectMapper;
-    }
-
-    @ModelAttribute
-    public void configureObjectMapper() {
-        SimpleFilterProvider filters = new SimpleFilterProvider();
-        filters.addFilter("customerFilter", SimpleBeanPropertyFilter.serializeAll());
-        filters.addFilter("accountFilter", SimpleBeanPropertyFilter.filterOutAllExcept("number", "currency", "balance"));
-        objectMapper.setFilterProvider(filters);
-    }
+    private final CustomerDtoMapperResponse customerDtoMapperResponse;
+    private final CustomerDtoMapperRequest customerDtoMapperRequest;
+    private final AccountDtoMapperRequest accountDtoMapperRequest;
 
     @Operation(summary = "Get customer by id")
     @GetMapping("/{id}")
     public ResponseEntity<?> getCustomer(@PathVariable Long id) {
         try {
             customerService.assignAccountsToCustomers();
-            return ResponseEntity.ok(customerService.getOne(id));
+            return ResponseEntity.ok(customerDtoMapperRequest.convertToDto(customerService.getOne(id).get()));
         } catch (Exception e) {
             log.error("Customer not found with ID " + id, e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Customer with ID " + id + " not found");
@@ -58,13 +49,14 @@ public class CustomerController {
     }
 
     @Operation(summary = "Get all customers")
+    @JsonView(CustomerView.Summary.class)
     @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomers(
+    public ResponseEntity<?> getAllCustomers(
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
 
-        Page<Customer> customersPage = customerService.findAll(0, Integer.MAX_VALUE, PageRequest.of(page, size));
-        List<Customer> customers = customersPage.getContent();
+        Page<CustomerDtoResponse> customersPage = customerService.findAll(0, Integer.MAX_VALUE, PageRequest.of(page, size)).map(customerDtoMapperResponse::convertToDto);
+        List<CustomerDtoResponse> customers = customersPage.getContent();
 
         return ResponseEntity.ok().body(customers);
     }
@@ -72,28 +64,35 @@ public class CustomerController {
 
     @Operation(summary = "Create a new customer")
     @PostMapping
-    public Customer createCustomer(@RequestBody CustomerDto customer) {
-        Customer newCustomer = new Customer(customer.getName(), customer.getEmail(), customer.getAge(), customer.getPassword(), customer.getPhoneNumber());
-        return customerService.save(newCustomer);
+    public ResponseEntity<?> createCustomer(@RequestBody CustomerDtoRequest customer) {
+        Customer newCustomer = customerDtoMapperRequest.convertToEntity(customer);
+        try {
+            customerService.save(newCustomer);
+            return ResponseEntity.ok(customerDtoMapperResponse.convertToDto(newCustomer));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+//        Customer newCustomer = new Customer(customer.getName(), customer.getEmail(), customer.getAge(), customer.getPassword(), customer.getPhoneNumber());
+//        return customerService.save(newCustomer);
     }
 
     @Operation(summary = "Update customer")
     @PutMapping("/id/{id}")
-    public ResponseEntity<?> updateCustomer(@PathVariable Long id, @RequestBody CustomerDto customerDto) {
+    public ResponseEntity<?> updateCustomer(@PathVariable Long id, @RequestBody CustomerDtoRequest customerDto) {
         try {
-            Customer currentCustomer = customerService.getOne(id).orElseThrow();
+            Customer updatedCustomer = customerDtoMapperRequest.convertToEntity(customerDto);
+            updatedCustomer.setId(id);
+            Customer currentCustomer = customerService.update(id, updatedCustomer);
             if (customerDto.getName() != null) {
                 currentCustomer.setName(customerDto.getName());
             }
             if (customerDto.getEmail() != null) {
                 currentCustomer.setEmail(customerDto.getEmail());
             }
-            if (customerDto.getAge() != null) {
+            if (customerDto.getAge() >= 18) {
                 currentCustomer.setAge(customerDto.getAge());
             }
-
-            Customer updatedCustomer = customerService.update(id, currentCustomer);
-
             if (updatedCustomer != null) {
                 return ResponseEntity.ok(updatedCustomer);
             } else {
@@ -125,9 +124,10 @@ public class CustomerController {
 
 
     @PostMapping("/{customerId}/accounts")
-    public ResponseEntity<?> createAccountForCustomer(@PathVariable Long customerId, @RequestBody AccountDto accountDto) {
+    public ResponseEntity<?> createAccountForCustomer(@PathVariable Long customerId, @RequestBody AccountDtoRequest accountDto) {
         try {
-            Customer customer = customerService.getOne(customerId).orElseThrow();
+            Customer customer = customerService.getOne(customerId).get();
+            Account account = accountDtoMapperRequest.convertToEntity(accountDto);
             customerService.createAccountForCustomer(customer.getId(), accountDto.getCurrency(), accountDto.getBalance());
             customerService.update(customerId, customer);
             return ResponseEntity.ok(customer);
@@ -139,7 +139,7 @@ public class CustomerController {
 
     @Operation(summary = "Delete an account from a customer by its ID")
     @DeleteMapping("/{customerId}/accounts/{accountNumber}")
-    public ResponseEntity<?> deleteAccountFromCustomer(@PathVariable Long customerId, @PathVariable String accountNumber) {
+    public ResponseEntity<?> deleteAccountFromCustomer(@PathVariable Long customerId, @PathVariable UUID accountNumber) {
         try {
             Customer customer = customerService.getOne(customerId).orElseThrow();
             Account accountToDelete = null;

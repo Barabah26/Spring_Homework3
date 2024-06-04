@@ -36,17 +36,13 @@ CREATE TABLE accounts (
                                   ON DELETE CASCADE
 );
 
-CREATE TABLE customer_employer (
-                                   customer_id INT,
-                                   employer_id INT,
-                                   PRIMARY KEY (customer_id, employer_id),
-                                   CONSTRAINT fk_customer_employer_customer
-                                       FOREIGN KEY (customer_id)
-                                           REFERENCES customers(id)
-                                           ON DELETE CASCADE,
-                                   CONSTRAINT fk_customer_employer_employer
-                                       FOREIGN KEY (employer_id)
-                                           REFERENCES employers(id)
-                                           ON DELETE CASCADE
+
+CREATE TABLE employers_customers (
+                                     employer_id BIGINT NOT NULL,
+                                     customer_id BIGINT NOT NULL,
+                                     PRIMARY KEY (employer_id, customer_id),
+                                     FOREIGN KEY (employer_id) REFERENCES employers(id),
+                                     FOREIGN KEY (customer_id) REFERENCES customers(id)
 );
+
 

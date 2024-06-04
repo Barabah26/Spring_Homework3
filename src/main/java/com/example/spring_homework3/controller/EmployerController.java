@@ -1,6 +1,8 @@
 package com.example.spring_homework3.controller;
 
 import com.example.spring_homework3.domain.Employer;
+import com.example.spring_homework3.dto.employer.EmployerDtoResponse;
+import com.example.spring_homework3.mapper.employer.EmployerDtoMapperResponse;
 import com.example.spring_homework3.service.DefaultEmployerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
@@ -20,20 +22,12 @@ import java.util.List;
 public class EmployerController {
 
     private final DefaultEmployerService employerService;
-    private final ObjectMapper objectMapper;
-
-    @ModelAttribute
-    public void configureObjectMapper() {
-        SimpleFilterProvider filters = new SimpleFilterProvider();
-        filters.addFilter("customerFilter", SimpleBeanPropertyFilter.serializeAll());
-        filters.addFilter("accountFilter", SimpleBeanPropertyFilter.filterOutAllExcept("number", "currency", "balance"));
-        objectMapper.setFilterProvider(filters);
-    }
+    private final EmployerDtoMapperResponse employerDtoMapperResponse;
 
     @Operation(summary = "Get all employers")
     @GetMapping
-    public List<Employer> getAllEmployers() {
-        return employerService.findAll();
+    public List<EmployerDtoResponse> getAll() {
+        return employerService.findAll().stream().map(employerDtoMapperResponse::convertToDto).toList();
     }
 
 

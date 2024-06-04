@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -99,7 +100,7 @@ public class DefaultCustomerService implements CustomerService {
     }
 
     @Override
-    public void deleteAccountFromCustomer(Long customerId, String accountNumber) {
+    public void deleteAccountFromCustomer(Long customerId, UUID accountNumber) {
         Customer customer = customerJpaRepository.getOne(customerId);
         if (customer != null) {
             Account accountToDelete = customer.getAccounts().stream()

@@ -36,7 +36,7 @@ CREATE TABLE accounts
     CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
 );
 
-CREATE TABLE customer_employer
+CREATE TABLE EMPLOYERS_CUSTOMERS
 (
     customer_id INT,
     employer_id INT,
